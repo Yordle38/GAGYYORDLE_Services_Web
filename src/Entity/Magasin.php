@@ -21,6 +21,12 @@ class Magasin
     #[ORM\Column(length: 255)]
     private ?string $lieu = null;
 
+    #[ORM\Column(type: "float")]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: "float")]
+    private ?float $longitude = null;
+
     #[ORM\OneToMany(targetEntity: Stock::class, mappedBy: 'magasin', orphanRemoval: true)]
     private Collection $stocks;
 
@@ -59,6 +65,28 @@ class Magasin
     {
         $this->lieu = $lieu;
 
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): self
+    {
+        $this->latitude = $latitude;
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): self
+    {
+        $this->longitude = $longitude;
         return $this;
     }
 
