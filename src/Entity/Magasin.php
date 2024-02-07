@@ -21,12 +21,22 @@ class Magasin
     #[ORM\Column(length: 255)]
     private ?string $lieu = null;
 
+    #[ORM\Column(type: "float")]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: "float")]
+    private ?float $longitude = null;
+
     #[ORM\OneToMany(targetEntity: Stock::class, mappedBy: 'magasin', orphanRemoval: true)]
     private Collection $stocks;
+
+    #[ORM\OneToMany(targetEntity: Vendeur::class, mappedBy: 'Magasin')]
+    private Collection $vendeurs;
 
     public function __construct()
     {
         $this->stocks = new ArrayCollection();
+        $this->vendeurs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -58,6 +68,28 @@ class Magasin
         return $this;
     }
 
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): self
+    {
+        $this->latitude = $latitude;
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): self
+    {
+        $this->longitude = $longitude;
+        return $this;
+    }
+
     /**
      * @return Collection<int, Stock>
      */
@@ -82,6 +114,37 @@ class Magasin
             // set the owning side to null (unless already changed)
             if ($stock->getMagasin() === $this) {
                 $stock->setMagasin(null);
+            }
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @return Collection<int, Vendeur>
+     */
+    public function getVendeurs(): Collection
+    {
+        return $this->vendeurs;
+    }
+
+    public function addVendeur(Vendeur $vendeur): static
+    {
+        if (!$this->vendeurs->contains($vendeur)) {
+            $this->vendeurs->add($vendeur);
+            $vendeur->setMagasin($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVendeur(Vendeur $vendeur): static
+    {
+        if ($this->vendeurs->removeElement($vendeur)) {
+            // set the owning side to null (unless already changed)
+            if ($vendeur->getMagasin() === $this) {
+                $vendeur->setMagasin(null);
             }
         }
 
