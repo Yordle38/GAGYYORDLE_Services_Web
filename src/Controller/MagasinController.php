@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 
 use App\Entity\Magasin;
+use App\Entity\Stock;
+
 
 class MagasinController extends AbstractController
 {
@@ -71,5 +73,26 @@ class MagasinController extends AbstractController
             return new JsonResponse(['error' => 'Une erreur s\'est produite lors de l\'ajout du magasin'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    #[Route('/magasins/{idMagasin}/stocks/{idProduit}', name: 'recuperer_stock_produit', methods: ['GET'])]
+    public function recupStockDeProduit(int $idMagasin, int $idProduit, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            // Récupérer le stock du produit dans le magasin spécifique
+            $stock = $entityManager->getRepository(Stock::class)->findOneBy(['magasin' => $idMagasin, 'produit' => $idProduit]);
+    
+            if (!$stock) {
+                return new JsonResponse(['error' => 'Stock non trouvé'], Response::HTTP_NOT_FOUND);
+            }
+    
+            // Vérifier si le stock du produit est disponible
+            $estEnStock = $stock->getQuantite() > 0;
+    
+            return new JsonResponse(['estEnStock' => $estEnStock, 'quantiteDisponible' => $stock->getQuantite()]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
+        }
+    }
+
 
 }
