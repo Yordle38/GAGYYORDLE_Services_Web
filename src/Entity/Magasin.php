@@ -87,4 +87,19 @@ class Magasin
 
         return $this;
     }
+
+    /**
+     * Convertir l'objet Magasin en tableau associatif
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'nom' => $this->getNom(),
+            'lieu' => $this->getLieu(),
+            // Ajoutez d'autres propriétés de Magasin si nécessaire
+        ];
+    }
 }
