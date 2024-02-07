@@ -8,24 +8,38 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+
 use App\Entity\Magasin;
+use App\Entity\Stock;
+
 
 class MagasinController extends AbstractController
 {
     #[Route('/magasins', name: 'api_magasins_liste')]
-    public function liste(EntityManagerInterface $entityManager): JsonResponse
+    public function liste(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
-            $magasins = $entityManager->getRepository(Magasin::class)->findAll();
+            
+            // RECUPERE LES INFROMATIONS DU GET
+            $page = $request->query->getInt('page', 1);
+            $size = $request->query->getInt('size', 10);
+            $offset = $page * $size;
+
+            // RECUPERE LES MAGASINS COMPRIS ENTRE PAGE*SIZE ET PAGE*SIZE + 10
+            $magasins = $entityManager->getRepository(Magasin::class)->findBy([], null, $size, $offset);
+
 
             $magasinsArray = [];
+
+            // SET LES MAGASINS POUR LE JSON
             foreach ($magasins as $magasin) {
                 $magasinsArray[] = [
                     'id' => $magasin->getId(),
                     'nom' => $magasin->getNom(),
                     'lieu' => $magasin->getLieu(),
-                    'latitude' => $magasin->getLatitude(),
                     'longitude' => $magasin->getLongitude(),
+                    'latitude' => $magasin->getLatitude(),
                 ];
             }
 
@@ -61,6 +75,24 @@ class MagasinController extends AbstractController
         }
     }
 
-
+    #[Route('/magasins/{idMagasin}/stocks/{idProduit}', name: 'recuperer_stock_produit', methods: ['GET'])]
+    public function recupStockDeProduit(int $idMagasin, int $idProduit, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            // Récupérer le stock du produit dans le magasin spécifique
+            $stock = $entityManager->getRepository(Stock::class)->findOneBy(['magasin' => $idMagasin, 'produit' => $idProduit]);
+    
+            if (!$stock) {
+                return new JsonResponse(['error' => 'Stock non trouvé'], Response::HTTP_NOT_FOUND);
+            }
+    
+            // Vérifier si le stock du produit est disponible
+            $estEnStock = $stock->getQuantite() > 0;
+    
+            return new JsonResponse(['estEnStock' => $estEnStock, 'quantiteDisponible' => $stock->getQuantite()]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
+        }
+    }
 
 }
