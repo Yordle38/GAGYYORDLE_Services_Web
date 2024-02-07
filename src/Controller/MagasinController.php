@@ -23,7 +23,13 @@ class MagasinController extends AbstractController
                     'id' => $magasin->getId(),
                     'nom' => $magasin->getNom(),
                     'lieu' => $magasin->getLieu(),
+                    'latitude' => $magasin->getLatitude(),
+                    'longitude' => $magasin->getLongitude(),
                 ];
+            }
+
+            if (empty($magasinsArray)) {
+                return new JsonResponse(['message' => 'Il n\'y a pas de magasin'], Response::HTTP_OK);
             }
 
             return new JsonResponse($magasinsArray);
@@ -32,16 +38,18 @@ class MagasinController extends AbstractController
         }
     }
 
-    #[Route('/magasins/add/{nom}/{lieu}', name: 'ajouter_magasin', methods: ['POST'])]
-    public function ajouter(string $nom, string $lieu, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/magasins/add/{nom}/{lieu}/{latitude}/{longitude}', name: 'ajouter_magasin', methods: ['POST'])]
+    public function ajouter(string $nom, string $lieu, float $latitude, float $longitude, EntityManagerInterface $entityManager): JsonResponse
     {
-        if ($nom === null || $lieu === null) {
-            return new JsonResponse(['error' => 'Le nom et le lieu du magasin sont obligatoires'], Response::HTTP_BAD_REQUEST);
+        if ($nom === null || $lieu === null || $latitude === null || $longitude === null) {
+            return new JsonResponse(['error' => 'Le nom, le lieu, la latitude et la longitude du magasin sont obligatoires'], Response::HTTP_BAD_REQUEST);
         }
         try {
             $magasin = new Magasin();
             $magasin->setNom($nom);
             $magasin->setLieu($lieu);
+            $magasin->setLatitude($latitude);
+            $magasin->setLongitude($longitude);
 
             $entityManager->persist($magasin);
             $entityManager->flush();

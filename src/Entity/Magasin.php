@@ -162,7 +162,8 @@ class Magasin
             'id' => $this->getId(),
             'nom' => $this->getNom(),
             'lieu' => $this->getLieu(),
-            // Ajoutez d'autres propriétés de Magasin si nécessaire
+            'latitude' => $this->getLatitude(),
+            'longitude' => $this->getLongitude(),
         ];
     }
 }
