@@ -7,22 +7,36 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+
 use App\Entity\Magasin;
 
 class MagasinController extends AbstractController
 {
     #[Route('/magasins', name: 'api_magasins_liste')]
-    public function liste(EntityManagerInterface $entityManager): JsonResponse
+    public function liste(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
-            $magasins = $entityManager->getRepository(Magasin::class)->findAll();
+            
+            // RECUPERE LES INFROMATIONS DU GET
+            $page = $request->query->getInt('page', 1);
+            $size = $request->query->getInt('size', 10);
+            $offset = $page * $size;
+
+            // RECUPERE LES MAGASINS COMPRIS ENTRE PAGE*SIZE ET PAGE*SIZE + 10
+            $magasins = $entityManager->getRepository(Magasin::class)->findBy([], null, $size, $offset);
+
 
             $magasinsArray = [];
+
+            // SET LES MAGASINS POUR LE JSON
             foreach ($magasins as $magasin) {
                 $magasinsArray[] = [
                     'id' => $magasin->getId(),
                     'nom' => $magasin->getNom(),
                     'lieu' => $magasin->getLieu(),
+                    'longitude' => $magasin->getLongitude(),
+                    'latitude' => $magasin->getLatitude(),
                 ];
             }
 
