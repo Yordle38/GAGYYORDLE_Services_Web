@@ -15,12 +15,13 @@ class Commande
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column]
-    private ?bool $estValidee = null;
-
     #[ORM\ManyToOne(inversedBy: 'commandes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Client $utilisateur = null;
+
+    #[ORM\OneToOne(targetEntity: Creneau::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Creneau $creneau;
 
     #[ORM\OneToMany(targetEntity: CommandeProduit::class, mappedBy: 'commande')]
     private Collection $commandeProduits;
@@ -35,18 +36,6 @@ class Commande
         return $this->id;
     }
 
-    public function isEstValidee(): ?bool
-    {
-        return $this->estValidee;
-    }
-
-    public function setEstValidee(bool $estValidee): static
-    {
-        $this->estValidee = $estValidee;
-
-        return $this;
-    }
-
     public function getUtilisateur(): ?Client
     {
         return $this->utilisateur;
@@ -56,6 +45,17 @@ class Commande
     {
         $this->utilisateur = $utilisateur;
 
+        return $this;
+    }
+
+    public function getCreneau(): ?Creneau
+    {
+        return $this->creneau;
+    }
+
+    public function setCreneau(?Creneau $creneau): self
+    {
+        $this->creneau = $creneau;
         return $this;
     }
 
