@@ -8,7 +8,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Request;
 
 use App\Entity\Magasin;
 use App\Entity\Stock;
@@ -16,6 +15,7 @@ use App\Entity\Stock;
 
 class MagasinController extends AbstractController
 {
+    // Récupérer la liste des magasins
     #[Route('/magasins', name: 'api_magasins_liste')]
     public function liste(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -53,12 +53,23 @@ class MagasinController extends AbstractController
         }
     }
 
-    #[Route('/magasins/add/{nom}/{lieu}/{latitude}/{longitude}', name: 'ajouter_magasin', methods: ['POST'])]
-    public function ajouter(string $nom, string $lieu, float $latitude, float $longitude, EntityManagerInterface $entityManager): JsonResponse
+    // Ajoute un magasin
+    #[Route('/magasins/add', name: 'ajouter_magasin', methods: ['POST'])]
+    public function ajouter(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        if ($nom === null || $lieu === null || $latitude === null || $longitude === null) {
+        // Récupérer les données du corps de la requête
+        $data = json_decode($request->getContent(), true);
+
+        // Vérifier si les données obligatoires sont présentes
+        if (!isset($data['nom'], $data['lieu'], $data['latitude'], $data['longitude'])) {
             return new JsonResponse(['error' => 'Le nom, le lieu, la latitude et la longitude du magasin sont obligatoires'], Response::HTTP_BAD_REQUEST);
         }
+
+        $nom = $data['nom'];
+        $lieu = $data['lieu'];
+        $latitude = $data['latitude'];
+        $longitude = $data['longitude'];
+
         try {
             $magasin = new Magasin();
             $magasin->setNom($nom);
@@ -75,8 +86,9 @@ class MagasinController extends AbstractController
         }
     }
 
+// Récupérer le stock d'un produit dans un magasin
     #[Route('/magasins/{idMagasin}/stocks/{idProduit}', name: 'recuperer_stock_produit', methods: ['GET'])]
-    public function recupStockDeProduit(int $idMagasin, int $idProduit, EntityManagerInterface $entityManager): JsonResponse
+    public function getStockDeProduit(int $idMagasin, int $idProduit, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
             // Récupérer le stock du produit dans le magasin spécifique
@@ -90,6 +102,35 @@ class MagasinController extends AbstractController
             $estEnStock = $stock->getQuantite() > 0;
     
             return new JsonResponse(['estEnStock' => $estEnStock, 'quantiteDisponible' => $stock->getQuantite()]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
+        }
+    }
+
+    // Récupérer tous les produits d'un magasin
+    #[Route('/magasins/{idMagasin}/produits', name: 'recuperer_stock_produit', methods: ['GET'])]
+    public function getProduitsMagasin(int $idMagasin, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            // Récupérer le magasin
+            $magasin = $entityManager->getRepository(Magasin::class)->find($idMagasin);
+
+            if (!$magasin) {
+                return new JsonResponse(['error' => 'Magasin non trouvé'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Récupérer tous les produits du magasin
+            $produits = [];
+            foreach ($magasin->getStocks() as $stock) {
+                $produits[] = [
+                    'id' => $stock->getProduit()->getId(),
+                    'nom' => $stock->getProduit()->getNom(),
+                    'prix' => $stock->getProduit()->getPrix(),
+                    // Ajoutez d'autres propriétés de Produit si nécessaire
+                ];
+            }
+
+            return new JsonResponse($produits);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
         }
