@@ -23,12 +23,16 @@ class MagasinController extends AbstractController
             
             // RECUPERE LES INFROMATIONS DU GET
             $page = $request->query->getInt('page', 1);
-            $size = $request->query->getInt('size', 10);
+            $size = $request->query->getInt('limit', 10);
+
+            $longitude = $request->query->get('longitude');
+            $latitude = $request->query->get('latitude');
+
             $offset = $page * $size;
 
             // RECUPERE LES MAGASINS COMPRIS ENTRE PAGE*SIZE ET PAGE*SIZE + 10
-            $magasins = $entityManager->getRepository(Magasin::class)->findBy([], null, $size, $offset);
-
+            $magasins = $entityManager->getRepository(Magasin::class)->findMagasinsProches($latitude, $longitude, $size, $offset);
+            // $magasins = $entityManager->getRepository(Magasin::class)->findBy([], null, $size, $offset);
 
             $magasinsArray = [];
 

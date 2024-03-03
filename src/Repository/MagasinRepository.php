@@ -21,6 +21,22 @@ class MagasinRepository extends ServiceEntityRepository
         parent::__construct($registry, Magasin::class);
     }
 
+    // RECUPERE LES MAGASINS LES PLUS PROCHES
+    public function findMagasinsProches(float $latitude, float $longitude, int $size, int $offset): array
+    {
+        $qb = $this->createQueryBuilder('m');
+        $qb->select('m')
+        ->addSelect(
+            'ABS(m.latitude - :latitude) + ABS(m.longitude - :longitude) AS HIDDEN distance'
+        )
+        ->setParameter('latitude', $latitude)
+        ->setParameter('longitude', $longitude)
+        ->orderBy('distance', 'ASC')
+        ->setMaxResults($size)
+        ->setFirstResult($offset);
+        return $qb->getQuery()->getResult();
+    }
+
 //    /**
 //     * @return Magasin[] Returns an array of Magasin objects
 //     */
