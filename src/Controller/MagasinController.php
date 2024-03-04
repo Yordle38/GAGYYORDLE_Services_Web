@@ -108,32 +108,30 @@ class MagasinController extends AbstractController
     }
 
     // Récupérer tous les produits d'un magasin
-    #[Route('/magasins/{idMagasin}/produits', name: 'recuperer_stock_produit', methods: ['GET'])]
-    public function getProduitsMagasin(int $idMagasin, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/magasins/{idMagasin}/produits', name: 'recuperer_produits_magasin', methods: ['GET'])]
+    public function getProduitsMagasin(Request $request, int $idMagasin, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
-            // Récupérer le magasin
+            $page = $request->query->getInt('page', 1);
+            $size = $request->query->getInt('size', 10);
+            $offset = $page * $size;
+
+            // Récupérer le magasin à partir de son identifiant
             $magasin = $entityManager->getRepository(Magasin::class)->find($idMagasin);
 
             if (!$magasin) {
-                return new JsonResponse(['error' => 'Magasin non trouvé'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['error' => 'Magasin non trouvé'], JsonResponse::HTTP_NOT_FOUND);
             }
 
-            // Récupérer tous les produits du magasin
+            // Récupérer les produits du magasin
+            $stocks = $entityManager->getRepository(Stock::class)->findBy(['magasin' => $idMagasin], null, $size, $offset);
             $produits = [];
-            foreach ($magasin->getStocks() as $stock) {
-                $produits[] = [
-                    'id' => $stock->getProduit()->getId(),
-                    'nom' => $stock->getProduit()->getNom(),
-                    'prix' => $stock->getProduit()->getPrix(),
-                    // Ajoutez d'autres propriétés de Produit si nécessaire
-                ];
+            foreach ($stocks as $stock) {
+                $produits[] = $stock->getProduit()->getNom();
             }
-
             return new JsonResponse($produits);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
+            return new JsonResponse(['error' => 'Une erreur s\'est produite: ' . $e->getMessage()], JsonResponse::HTTP_CONFLICT);
         }
     }
-
 }

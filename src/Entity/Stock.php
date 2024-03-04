@@ -29,14 +29,14 @@ class Stock
         return $this->id;
     }
 
-    public function getProduit(): ?produit
+    public function getProduit(): ?Produit
     {
-        return $this->Produit;
+        return $this->produit;
     }
 
     public function setProduit(?produit $Produit): static
     {
-        $this->Produit = $Produit;
+        $this->produit = $Produit;
 
         return $this;
     }

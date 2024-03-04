@@ -27,7 +27,7 @@ class Magasin
     #[ORM\Column(type: "float")]
     private ?float $longitude = null;
 
-    #[ORM\OneToMany(targetEntity: Stock::class, mappedBy: 'magasin', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Stock::class, mappedBy: 'magasin', fetch: "EAGER",)]
     private Collection $stocks;
 
     #[ORM\OneToMany(targetEntity: Vendeur::class, mappedBy: 'Magasin')]
