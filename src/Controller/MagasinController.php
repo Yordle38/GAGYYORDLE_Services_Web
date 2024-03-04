@@ -74,6 +74,26 @@ class MagasinController extends AbstractController
         $latitude = $data['latitude'];
         $longitude = $data['longitude'];
 
+        // Vérifier que $nom est une chaîne de caractères
+        if (!is_string($nom)) {
+            return new JsonResponse(['error' => 'Le nom du magasin doit être une chaîne de caractères'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Vérifier que $lieu est une chaîne de caractères
+        if (!is_string($lieu)) {
+            return new JsonResponse(['error' => 'Le lieu du magasin doit être une chaîne de caractères'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Vérifier que $latitude est un nombre décimal (float)
+        if (!is_float($latitude)) {
+            return new JsonResponse(['error' => 'La latitude du magasin doit être un nombre décimal (float)'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Vérifier que $longitude est un nombre décimal (float)
+        if (!is_float($longitude)) {
+            return new JsonResponse(['error' => 'La longitude du magasin doit être un nombre décimal (float)'], Response::HTTP_BAD_REQUEST);
+        }
+
         try {
             $magasin = new Magasin();
             $magasin->setNom($nom);
@@ -92,19 +112,28 @@ class MagasinController extends AbstractController
 
 // Récupérer le stock d'un produit dans un magasin
     #[Route('/magasins/{idMagasin}/stocks/{idProduit}', name: 'recuperer_stock_produit', methods: ['GET'])]
-    public function getStockDeProduit(int $idMagasin, int $idProduit, EntityManagerInterface $entityManager): JsonResponse
+    public function getStockDeProduit(string $idMagasin, string $idProduit, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
+            // Valider que idMagasin et idProduit sont des nombres
+            if (!ctype_digit($idMagasin) || !ctype_digit($idProduit)) {
+                return new JsonResponse(['error' => 'Les identifiants du magasin et du produit doivent être des nombres'], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
+            // Convertir idMagasin et idProduit en entiers
+            $idMagasin = (int) $idMagasin;
+            $idProduit = (int) $idProduit;
+
             // Récupérer le stock du produit dans le magasin spécifique
             $stock = $entityManager->getRepository(Stock::class)->findOneBy(['magasin' => $idMagasin, 'produit' => $idProduit]);
-    
+
             if (!$stock) {
                 return new JsonResponse(['error' => 'Stock non trouvé'], Response::HTTP_NOT_FOUND);
             }
-    
+
             // Vérifier si le stock du produit est disponible
             $estEnStock = $stock->getQuantite() > 0;
-    
+
             return new JsonResponse(['estEnStock' => $estEnStock, 'quantiteDisponible' => $stock->getQuantite()]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
@@ -113,9 +142,17 @@ class MagasinController extends AbstractController
 
     // Récupérer tous les produits d'un magasin
     #[Route('/magasins/{idMagasin}/produits', name: 'recuperer_produits_magasin', methods: ['GET'])]
-    public function getProduitsMagasin(Request $request, int $idMagasin, EntityManagerInterface $entityManager): JsonResponse
+    public function getProduitsMagasin(Request $request, string $idMagasin, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
+
+            if (!ctype_digit($idMagasin)) {
+                return new JsonResponse(['error' => 'L\'identifiant du magasin doit être un nombre'], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
+            // Convertir idMagasin en un entier
+            $idMagasin = (int) $idMagasin;
+
             $page = $request->query->getInt('page', 1);
             $size = $request->query->getInt('size', 10);
             $offset = $page * $size;
@@ -128,7 +165,7 @@ class MagasinController extends AbstractController
             }
 
             // Récupérer les produits du magasin
-            $stocks = $entityManager->getRepository(Stock::class)->findBy(['magasin' => $idMagasin], null, $size, $offset);
+            $stocks = $magasin->getStocks();
             $produits = [];
             foreach ($stocks as $stock) {
                 $produits[] = $stock->getProduit()->getNom();

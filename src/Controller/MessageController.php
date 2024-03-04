@@ -40,6 +40,9 @@ class MessageController extends AbstractController
             $contentMessage =  $data['message'];
 
             $idVendeur = $data['idVendeur'];
+            if (!is_int($idVendeur)) {
+                return new JsonResponse(['error' => 'L\'identifiant du vendeur doit être un entier'], Response::HTTP_BAD_REQUEST);
+            }
 
             $vendeur = $entityManager->getRepository(Vendeur::class)->find($idVendeur);
             
