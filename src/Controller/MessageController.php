@@ -36,18 +36,27 @@ class MessageController extends AbstractController
 
             $content = $request->getContent();
             $data = json_decode($content, true);
-
+            $mailUtilisateur = $data['mailUtilisateur'];
             $contentMessage =  $data['message'];
 
             $idVendeur = $data['idVendeur'];
             if (!is_int($idVendeur)) {
                 return new JsonResponse(['error' => 'L\'identifiant du vendeur doit être un entier'], Response::HTTP_BAD_REQUEST);
             }
+            if(!is_string($mailUtilisateur)){
+                return new JsonResponse(['error' => 'Le mail doit être un string'], Response::HTTP_BAD_REQUEST);
+            }
+            if($mailUtilisateur==""){
+                return new JsonResponse(['error' => 'Le mail ne peut pas être vide'], Response::HTTP_BAD_REQUEST);
+            }
 
             $vendeur = $entityManager->getRepository(Vendeur::class)->find($idVendeur);
             
             if (!$vendeur) {
                 return new JsonResponse(['error' => 'Le vendeur n\'existe pas'], Response::HTTP_NOT_FOUND);
+            }
+            if(!isset($data['mailUtilisateur']) || !isset($data['message']) || !isset($data['idVendeur'])){
+                return new JsonResponse(['error' => 'mailUtilisateur, message et idVendeur doivent être renseignées'], Response::HTTP_NOT_FOUND);
             }
             $message->setVendeur($vendeur);
             $message->setContenue($contentMessage);
