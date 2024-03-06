@@ -20,7 +20,7 @@ class Commande
     private ?Client $utilisateur = null;
 
     #[ORM\OneToOne(targetEntity: Creneau::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Creneau $creneau;
 
     #[ORM\OneToMany(targetEntity: CommandeProduit::class, mappedBy: 'commande')]
