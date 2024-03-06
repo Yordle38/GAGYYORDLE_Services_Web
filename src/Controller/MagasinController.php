@@ -11,10 +11,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 use App\Entity\Magasin;
 use App\Entity\Stock;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+
 
 
 class MagasinController extends AbstractController
 {
+
+
     // Récupérer la liste des magasins
     #[Route('/magasins', name: 'api_magasins_liste')]
     public function liste(Request $request, EntityManagerInterface $entityManager): JsonResponse
@@ -59,8 +65,33 @@ class MagasinController extends AbstractController
 
     // Ajoute un magasin
     #[Route('/magasins/add', name: 'ajouter_magasin', methods: ['POST'])]
-    public function ajouter(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function ajouter(Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): JsonResponse
     {
+
+        // Récupérer le token d'authentification depuis l'en-tête Authorization
+        $token = $request->headers->get('Authorization');
+
+
+        // Vérifier si le token est présent
+        if (!$token) {
+            return new JsonResponse(['error' => 'Token manquant dans l\'en-tête Authorization'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Extraire le token JWT de l'en-tête Authorization
+        $jwtToken = str_replace('Bearer ', '', $token);
+
+        // Vérifier si le token est valide et extraire les données de l'utilisateur
+        try {
+            $tokenData = $jwtManager->decode($jwtToken);
+
+            // Vérifier si l'utilisateur a le rôle "admin"
+            if (!in_array('ROLE_ADMIN', $tokenData['roles'], true)) {
+                return new JsonResponse(['error' => 'Accès non autorisé'], Response::HTTP_FORBIDDEN);
+            }
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Token invalide'], Response::HTTP_UNAUTHORIZED);
+        }
+
         // Récupérer les données du corps de la requête
         $data = json_decode($request->getContent(), true);
 
