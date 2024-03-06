@@ -17,21 +17,21 @@ class SecurityController extends AbstractController
         $error = $authenticationUtils->getLastAuthenticationError();
 
         // Récupérer le dernier nom d'utilisateur saisi par l'utilisateur
-        $lastUsername = $authenticationUtils->getLastUsername();
-        // Votre logique d'authentification ici, par exemple vérifier les informations d'identification
+        $lastUsername = $authenticationUtils->getLastUsername();// Votre logique d'authentification ici, par exemple vérifier les informations d'identification
         // ...
 
         // Si l'authentification est réussie, générer le token JWT
         if (!$error && $this->getUser()) {
             $token = $jwtManager->create($this->getUser());
             // Retourner le token JWT dans la réponse
-            dd($token);
-
             return $this->json(['token' => $token]);
         }
 
         // Rendre le formulaire de connexion avec les erreurs éventuelles
-        return new JsonResponse(['message' => 'Inscription réussie via le formulaire mais pas postman :/'], JsonResponse::HTTP_CREATED);
+        return $this->render('security/login.html.twig', [
+            'last_username' => $lastUsername,
+            'error' => $error,
+        ]);
     }
 
     #[Route(path: '/logout', name: 'app_logout')]
