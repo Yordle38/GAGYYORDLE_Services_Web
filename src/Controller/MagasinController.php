@@ -103,22 +103,6 @@ class MagasinController extends AbstractController
             return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
         }
 
-//
-//
-//        // Extraire le token JWT de l'en-tête Authorization
-//        $jwtToken = str_replace('Bearer ', '', $token);
-//
-//        // Vérifier si le token est valide et extraire les données de l'utilisateur
-//        try {
-//            $tokenData = $jwtManager->decode($jwtToken);
-//
-//            // Vérifier si l'utilisateur a le rôle "admin"
-//            if (!in_array('ROLE_ADMIN', $tokenData['roles'], true)) {
-//                throw new AccessDeniedException('Accès non autorisé');
-//            }
-//        } catch (\Exception $e) {
-//            return new JsonResponse(['error' => 'Token invalide'], Response::HTTP_UNAUTHORIZED);
-//        }
 
         // Récupérer les données du corps de la requête
         $data = json_decode($request->getContent(), true);

@@ -19,7 +19,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 
 class CommandeController extends AbstractController
 {
-    #[Route('/commandes/creer', name: 'crationCommande')]
+    #[Route('/commandes/creer', name: 'creationCommande')]
     public function creerCommande(Request $request, EntityManagerInterface $entityManager,  JWTTokenManagerInterface $jwtManager): Response
     {
         if ($request->isMethod('POST')) {
