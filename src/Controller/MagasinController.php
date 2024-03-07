@@ -15,6 +15,8 @@ use App\Entity\Stock;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+
 
 
 
@@ -66,31 +68,57 @@ class MagasinController extends AbstractController
 
     // Ajoute un magasin
     #[Route('/magasins/add', name: 'ajouter_magasin', methods: ['POST'])]
-    public function ajouter(Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): JsonResponse
+    public function ajouter(Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): Response
     {
-
         // Récupérer le token d'authentification depuis l'en-tête Authorization
         $token = $request->headers->get('Authorization');
 
-        // Vérifier si le token est présent
-        if (!$token) {
-            return new JsonResponse(['error' => 'Token manquant dans l\'en-tête Authorization'], Response::HTTP_UNAUTHORIZED);
+        // Vérifie si le token JWT est vide ou s'il ne commence pas par "Bearer "
+        if (!$token || strpos($token, 'Bearer ') !== 0) {
+            return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+        }
+        $tokenParts = explode(".", $token);
+        $tokenPayload = base64_decode($tokenParts[1]);
+
+        // Vérifie si le décodage a réussi
+        if (!$tokenPayload) {
+            return new Response('token non valide', Response::HTTP_UNAUTHORIZED);
         }
 
-        // Extraire le token JWT de l'en-tête Authorization
-        $jwtToken = str_replace('Bearer ', '', $token);
+        $jwtPayload = json_decode($tokenPayload);
 
-        // Vérifier si le token est valide et extraire les données de l'utilisateur
-        try {
-            $tokenData = $jwtManager->decode($jwtToken);
-
-            // Vérifier si l'utilisateur a le rôle "admin"
-            if (!in_array('ROLE_ADMIN', $tokenData['roles'], true)) {
-                return new JsonResponse(['error' => 'Accès non autorisé'], Response::HTTP_FORBIDDEN);
-            }
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Token invalide'], Response::HTTP_UNAUTHORIZED);
+        // Vérifie si la charge utile du JWT contient l'identifiant de l'utilisateur
+        if (!isset($jwtPayload->username)) {
+            return new Response('Utilisateur non connecté', Response::HTTP_UNAUTHORIZED);
         }
+
+        $tokenParts = explode(".", $token);
+
+        $tokenPayload = base64_decode($tokenParts[1]);
+        $jwtPayload = json_decode($tokenPayload);
+
+        $role=$jwtPayload->roles[0];
+
+        if($role != "ROLE_ADMIN"){
+            return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+        }
+
+//
+//
+//        // Extraire le token JWT de l'en-tête Authorization
+//        $jwtToken = str_replace('Bearer ', '', $token);
+//
+//        // Vérifier si le token est valide et extraire les données de l'utilisateur
+//        try {
+//            $tokenData = $jwtManager->decode($jwtToken);
+//
+//            // Vérifier si l'utilisateur a le rôle "admin"
+//            if (!in_array('ROLE_ADMIN', $tokenData['roles'], true)) {
+//                throw new AccessDeniedException('Accès non autorisé');
+//            }
+//        } catch (\Exception $e) {
+//            return new JsonResponse(['error' => 'Token invalide'], Response::HTTP_UNAUTHORIZED);
+//        }
 
         // Récupérer les données du corps de la requête
         $data = json_decode($request->getContent(), true);
