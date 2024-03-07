@@ -216,36 +216,6 @@ class MagasinController extends AbstractController
         }
     }
 
-    // Récupérer tous les produits d'un magasin
-    #[Route('/magasins/{idMagasin}/creneaux-disponibles', name: 'recupererCreneaux', methods: ['GET'])]
-    public function getCreneauxFromMagasin(int $idMagasin, EntityManagerInterface $entityManager, CreneauRepository $creneauRepository): JsonResponse
-    {
-        try {
-            // Récupérer le magasin
-            $magasin = $entityManager->getRepository(Magasin::class)->find($idMagasin);
-            $creneaux = $creneauRepository->findByMagasin($magasin);
-            dd($creneaux);
-            
-            if (!$magasin) {
-                return new JsonResponse(['error' => 'Magasin non trouvé'], Response::HTTP_NOT_FOUND);
-            }
-
-            // Récupérer tous les produits du magasin
-            $produits = [];
-            foreach ($magasin->getStocks() as $stock) {
-                $produits[] = [
-                    'id' => $stock->getProduit()->getId(),
-                    'nom' => $stock->getProduit()->getNom(),
-                    'prix' => $stock->getProduit()->getPrix(),
-                    // Ajoutez d'autres propriétés de Produit si nécessaire
-                ];
-            }
-
-            return new JsonResponse($produits);
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
-        }
-    }
 
 //    #[\Symfony\Component\Routing\Attribute\Route('/login', name: 'token', methods: ['POST'])]
 //    public function login(EntityManagerInterface $entityManager, Request $request, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $jwtManager): JsonResponse {
