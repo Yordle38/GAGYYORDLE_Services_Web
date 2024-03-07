@@ -26,6 +26,13 @@ class Commande
     #[ORM\OneToMany(targetEntity: CommandeProduit::class, mappedBy: 'commande')]
     private Collection $commandeProduits;
 
+    #[ORM\ManyToOne(targetEntity: Magasin::class, inversedBy: 'commandes')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Magasin $magasin = null;
+
+    #[ORM\OneToMany(targetEntity: Creneau::class, mappedBy: 'magasin')]
+    private Collection $creneaux;
+
     public function __construct()
     {
         $this->commandeProduits = new ArrayCollection();

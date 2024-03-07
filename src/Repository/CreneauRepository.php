@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Repository;
+use App\Entity\Magasin;
 
 use App\Entity\Creneau;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -19,6 +20,14 @@ class CreneauRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Creneau::class);
+    }
+    public function findByMagasin(Magasin $magasin)
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.magasin = :magasin')
+            ->setParameter('magasin', $magasin)
+            ->getQuery()
+            ->getResult();
     }
 
 //    /**

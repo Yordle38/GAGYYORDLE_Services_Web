@@ -17,14 +17,20 @@ class Creneau
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $date = null;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private ?\DateTimeInterface $heure_debut = null;
+
 
     #[ORM\OneToOne(targetEntity: Commande::class, mappedBy: 'creneau')]
     private ?Commande $commande = null;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private ?\DateTimeInterface $heure_fin = null;
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    private ?string $heure_debut = null;
+    
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    private ?string $heure_fin = null;
+
+    #[ORM\ManyToOne(targetEntity: Magasin::class, inversedBy: 'creneaux')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Magasin $magasin;
 
     public function getId(): ?int
     {
@@ -43,12 +49,12 @@ class Creneau
         return $this;
     }
 
-    public function getHeureDebut(): ?\DateTimeInterface
+    public function getHeureDebut(): ?string
     {
         return $this->heure_debut;
     }
 
-    public function setHeureDebut(\DateTimeInterface $heure_debut): static
+    public function setHeureDebut(string $heure_debut): static
     {
         $this->heure_debut = $heure_debut;
 
@@ -66,12 +72,12 @@ class Creneau
         return $this;
     }
 
-    public function getHeureFin(): ?\DateTimeInterface
+    public function getHeureFin(): ?string
     {
         return $this->heure_fin;
     }
 
-    public function setHeureFin(\DateTimeInterface $heure_fin): static
+    public function setHeureFin(string $heure_fin): static
     {
         $this->heure_fin = $heure_fin;
 

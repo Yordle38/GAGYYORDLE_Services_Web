@@ -106,8 +106,7 @@ class CommandeController extends AbstractController
             $entityManager->flush();
 
             $responseData = [
-                'success' => true,
-                'message' => 'cration de la commande reussie',
+                'message' => 'creation de la commande reussie',
                 'commande_id' => $commande->getId(),
                 'client' => [
                     'id' => $client->getId(),

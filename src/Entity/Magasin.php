@@ -33,6 +33,10 @@ class Magasin
     #[ORM\OneToMany(targetEntity: Vendeur::class, mappedBy: 'Magasin')]
     private Collection $vendeurs;
 
+    //
+    #[ORM\OneToMany(targetEntity: Commande::class, mappedBy: 'magasin')]
+    private Collection $commandes;
+
     public function __construct()
     {
         $this->stocks = new ArrayCollection();
