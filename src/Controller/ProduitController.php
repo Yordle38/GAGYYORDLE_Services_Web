@@ -208,4 +208,59 @@ class ProduitController extends AbstractController
             return new JsonResponse(['error' => 'Une erreur s\'est produite lors de l\'ajout du produit: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    #[Route('/produit/supprimer/{idProduit}', name: 'supprimer_produit', methods: ['DELETE'])]
+    public function supprimerProduit(int $idProduit,Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): Response
+    {
+        // Récupérer le token d'authentification depuis l'en-tête Authorization
+        $token = $request->headers->get('Authorization');
+
+        // Vérifie si le token JWT est vide ou s'il ne commence pas par "Bearer "
+        if (!$token || strpos($token, 'Bearer ') !== 0) {
+            return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+        }
+        $tokenParts = explode(".", $token);
+        $tokenPayload = base64_decode($tokenParts[1]);
+
+        // Vérifie si le décodage a réussi
+        if (!$tokenPayload) {
+            return new Response('token non valide', Response::HTTP_UNAUTHORIZED);
+        }
+
+        $jwtPayload = json_decode($tokenPayload);
+
+        // Vérifie si la charge utile du JWT contient l'identifiant de l'utilisateur
+        if (!isset($jwtPayload->username)) {
+            return new Response('Utilisateur non connecté', Response::HTTP_UNAUTHORIZED);
+        }
+
+        $tokenParts = explode(".", $token);
+
+        $tokenPayload = base64_decode($tokenParts[1]);
+        $jwtPayload = json_decode($tokenPayload);
+
+        $role = $jwtPayload->roles[0];
+
+        if ($role != "ROLE_ADMIN") {
+            return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Rechercher le produit dans la base de données
+        $produit = $entityManager->getRepository(Produit::class)->find($idProduit);
+
+        // Vérifier si le produit existe
+        if (!$produit) {
+            return new JsonResponse(['error' => 'Produit non trouvé'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            // Supprimer le produit de la base de données
+            $entityManager->remove($produit);
+            $entityManager->flush();
+
+            return new JsonResponse(['message' => 'Produit supprimé avec succès'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Une erreur s\'est produite lors de la suppression du produit: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
