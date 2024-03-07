@@ -121,4 +121,21 @@ class Produit
 
         return $this;
     }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'nom' => $this->nom,
+            'prix' => $this->prix,
+            // Ajoutez d'autres propriétés si nécessaire
+        ];
+    }
+
+    public function setId(?int $id): void
+    {
+        $this->id = $id;
+    }
+
+
 }
