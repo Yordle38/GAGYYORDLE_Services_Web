@@ -8,8 +8,7 @@ use App\Entity\Commande;
 use App\Entity\Magasin;
 use App\Entity\Produit;
 use App\Entity\CommandeProduit;
-
-
+use App\Entity\Creneau;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,7 +19,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 class CommandeController extends AbstractController
 {
     #[Route('/commandes/creer', name: 'creationCommande')]
-    public function creerCommande(Request $request, EntityManagerInterface $entityManager,  JWTTokenManagerInterface $jwtManager): Response
+    public function creerCommande(Request $request, EntityManagerInterface $entityManager): Response
     {
         if ($request->isMethod('POST')) {
             $token = $request->headers->get('Authorization');
@@ -73,7 +72,7 @@ class CommandeController extends AbstractController
             }
 
             $commande = new commande();
-
+            $commande->setMagasin($magasin);
             $commande->setUtilisateur($client);
 
             // AJOUTE LES PRODUITS A LA COMMANDE
@@ -87,7 +86,7 @@ class CommandeController extends AbstractController
                 // Vérifier si le produit existe
                 if (!$produit) {
                     return new JsonResponse([
-                        'message' => 'Produit pas trouvé avec cet id'.$produitId,
+                        'message' => 'Produit pas trouvé avec l\'id '.$produitId,
                         'status_code' => Response::HTTP_NOT_FOUND
                     ], Response::HTTP_NOT_FOUND);
                 }
@@ -128,6 +127,71 @@ class CommandeController extends AbstractController
             return new JsonResponse($responseData);
 
 
+        }
+    }
+    #[Route('/commandes/{idCommande}/choisir-creneau', name: 'choixCreneau')]
+    public function choisirCreneau(Request $request, int $idCommande, EntityManagerInterface $entityManager): Response
+    {
+        if ($request->isMethod('POST')) {
+
+            $token = $request->headers->get('Authorization');
+            
+            // Vérifie si le token JWT est vide ou s'il ne commence pas par "Bearer "
+            if (!$token || strpos($token, 'Bearer ') !== 0) {
+                return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+            }
+            $tokenParts = explode(".", $token);
+            $tokenPayload = base64_decode($tokenParts[1]);
+
+            // Vérifie si le décodage a réussi
+            if (!$tokenPayload) {
+                return new Response('token non valide', Response::HTTP_UNAUTHORIZED);
+            }
+
+            $jwtPayload = json_decode($tokenPayload);
+
+            // Vérifie si la charge utile du JWT contient l'identifiant de l'utilisateur
+            if (!isset($jwtPayload->username)) {
+                return new Response('Utilisateur non connecté', Response::HTTP_UNAUTHORIZED);
+            }
+
+            // recupere la commande
+            $commande = $entityManager->getRepository(Commande::class)->find($idCommande);
+            if(!$commande){
+                return new JsonResponse(['error' => 'Cette commande n\'existe pas'], Response::HTTP_BAD_REQUEST);
+            }
+           
+            if($commande->getCreneau()){
+                return new JsonResponse(['error' => 'Un creneau est deja reserve pour cette commande','idCreneau' => $commande->getCreneau()->getId()], Response::HTTP_BAD_REQUEST);
+            }
+
+            $content = $request->getContent();
+            $data = json_decode($content, true);
+            $idCreneau = $data['creneau_id'];
+
+            $creneau = $entityManager->getRepository(Creneau::class)->find($idCreneau);
+            if(!$creneau){
+                return new JsonResponse(['error' => 'Ce creneau nexiste pas'], Response::HTTP_BAD_REQUEST);
+            }
+            if($commande->getMagasin()!=$creneau->getMagasin()){
+                return new JsonResponse(['error' => 'Ce magasin ne dispose pas de ce creneau'], Response::HTTP_BAD_REQUEST);
+            }
+            if($creneau->getCommande()){
+                return new JsonResponse(['error' => 'Ce creneau est deja reserve pour une autre commande'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $commande->setCreneau($creneau);
+            $entityManager->persist($commande);
+            $entityManager->flush();
+            
+            $responseData = [
+                'message' => 'La commande est bien reservee a ce creneau',
+                'creneau: ' => $creneau,
+                'produits' => [],
+            ];
+
+
+            return new JsonResponse($responseData);
         }
     }
 }

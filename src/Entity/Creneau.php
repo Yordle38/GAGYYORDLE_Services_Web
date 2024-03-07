@@ -83,4 +83,15 @@ class Creneau
 
         return $this;
     }
+
+    public function getMagasin(): ?Magasin
+    {
+        return $this->magasin;
+    }
+
+    public function setMagasin(?Magasin $magasin): self
+    {
+        $this->magasin = $magasin;
+        return $this;
+    }
 }

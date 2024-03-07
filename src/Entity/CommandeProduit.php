@@ -14,7 +14,7 @@ class CommandeProduit
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'commandeProduits')]
-    private ?produit $Produit = null;
+    private ?Produit $Produit = null;
 
     #[ORM\ManyToOne(inversedBy: 'commandeProduits')]
     #[ORM\JoinColumn(nullable: false)]
