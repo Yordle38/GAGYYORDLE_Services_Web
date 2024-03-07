@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Magasin;
+use App\Entity\Produit;
 use App\Entity\Stock;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -22,7 +23,7 @@ class ProduitController extends AbstractController
         ]);
     }
 
-    #[Route ('/produit/{idMagasin}/{idProduit}', name: 'ajouter_magasin', methods: ['DELETE'])]
+    #[Route ('/produit/supprimer/{idMagasin}/{idProduit}', name: 'ajouter_magasin', methods: ['DELETE'])]
     public function delete($idMagasin, $idProduit, Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): Response
     {
         // Récupérer le token d'authentification depuis l'en-tête Authorization
@@ -81,5 +82,71 @@ class ProduitController extends AbstractController
 
         // Retourne une réponse indiquant que la suppression a réussi
         return new Response('Produit supprimé du magasin avec succès', Response::HTTP_OK);
+    }
+
+    #[Route('/produit/ajouter/{idMagasin}/{idProduit}/{quantite}', name: 'ajouter_produit_magasin', methods: ['POST'])]
+    public function ajouter($idMagasin, $idProduit, $quantite, Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): Response
+    {
+        // Récupérer le token d'authentification depuis l'en-tête Authorization
+        $token = $request->headers->get('Authorization');
+
+        // Vérifie si le token JWT est vide ou s'il ne commence pas par "Bearer "
+        if (!$token || strpos($token, 'Bearer ') !== 0) {
+            return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+        }
+        $tokenParts = explode(".", $token);
+        $tokenPayload = base64_decode($tokenParts[1]);
+
+        // Vérifie si le décodage a réussi
+        if (!$tokenPayload) {
+            return new Response('token non valide', Response::HTTP_UNAUTHORIZED);
+        }
+
+        $jwtPayload = json_decode($tokenPayload);
+
+        // Vérifie si la charge utile du JWT contient l'identifiant de l'utilisateur
+        if (!isset($jwtPayload->username)) {
+            return new Response('Utilisateur non connecté', Response::HTTP_UNAUTHORIZED);
+        }
+
+        $tokenParts = explode(".", $token);
+
+        $tokenPayload = base64_decode($tokenParts[1]);
+        $jwtPayload = json_decode($tokenPayload);
+
+        $role = $jwtPayload->roles[0];
+
+        if ($role != "ROLE_ADMIN") {
+            return new Response('non autorisé', Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Recherche du magasin dans la base de données
+        $magasin = $entityManager->getRepository(Magasin::class)->find($idMagasin);
+
+        // Vérifie si le magasin existe
+        if (!$magasin) {
+            return new Response('Magasin non trouvé', Response::HTTP_NOT_FOUND);
+        }
+
+        // Recherche du produit dans la base de données
+        $produit = $entityManager->getRepository(Produit::class)->find($idProduit);
+
+        // Vérifie si le produit existe
+        if (!$produit) {
+            return new Response('Produit non trouvé', Response::HTTP_NOT_FOUND);
+        }
+
+        // Création d'une nouvelle instance de Stock
+        $stock = new Stock();
+        $stock->setMagasin($magasin);
+        $stock->setProduit($produit);
+        $stock->setQuantite($quantite); // Définit la quantité du produit dans le stock
+
+        // Ajout du stock à l'EntityManager
+        $entityManager->persist($stock);
+        $entityManager->flush();
+
+        // Retourne une réponse indiquant que l'ajout a réussi
+        return new Response('Produit ajouté au magasin avec succès', Response::HTTP_CREATED);
     }
 }
