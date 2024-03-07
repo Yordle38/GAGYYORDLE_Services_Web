@@ -2,13 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Client;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
-
 use App\Entity\Magasin;
 use App\Entity\Stock;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -70,7 +71,6 @@ class MagasinController extends AbstractController
 
         // Récupérer le token d'authentification depuis l'en-tête Authorization
         $token = $request->headers->get('Authorization');
-
 
         // Vérifier si le token est présent
         if (!$token) {
@@ -170,5 +170,35 @@ class MagasinController extends AbstractController
             return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
         }
     }
+
+//    #[\Symfony\Component\Routing\Attribute\Route('/login', name: 'token', methods: ['POST'])]
+//    public function login(EntityManagerInterface $entityManager, Request $request, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $jwtManager): JsonResponse {
+//        $credentials = json_decode($request->getContent(), true);
+//
+//
+//        if ($credentials === null) {
+//            return new JsonResponse(['message' => 'Les données JSON sont invalides'], 400);
+//        }
+//
+//        if (!isset($credentials['username']) || !isset($credentials['password'])) {
+//            return new JsonResponse(['message' => 'Les champs email et password sont requis'], 400);
+//        }
+//
+//        $user = $entityManager->getRepository(Client::class)->findOneBy(['email' => $credentials['username']]);
+//
+//        if (!$user || !$passwordHasher->isPasswordValid($user, $credentials['password'])) {
+//            return new JsonResponse(['message' => 'Identifiants invalides'], 401);
+//        }
+//
+//        $token = $jwtManager->create($user);
+//
+//        return new JsonResponse(['token' => $token]);
+//    }
+//
+//    #[Route(path: '/logout', name: 'app_logout')]
+//    public function logout(): void
+//    {
+//        throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
+//    }
 
 }

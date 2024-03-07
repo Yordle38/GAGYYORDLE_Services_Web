@@ -2,38 +2,49 @@
 
 namespace App\Controller;
 
+use App\Entity\Client;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Symfony\Component\HttpFoundation\Request;
+
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class SecurityController extends AbstractController
 {
-    #[Route(path: '/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils, JWTTokenManagerInterface $jwtManager): Response
+
+
+
+    #[Route('/login', name: 'token', methods: ['POST'])]
+    public function login(Request $request, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $jwtManager, EntityManagerInterface $entityManager): JsonResponse
     {
-        // R�cup�rer les erreurs de l'authentification s'il y en a
-        $error = $authenticationUtils->getLastAuthenticationError();
+        // Récupérer les données JSON envoyées dans la requête
+        $data = json_decode($request->getContent(), true);
 
-        // R�cup�rer le dernier nom d'utilisateur saisi par l'utilisateur
-        $lastUsername = $authenticationUtils->getLastUsername();// Votre logique d'authentification ici, par exemple v�rifier les informations d'identification
-        // ...
-
-        // Si l'authentification est r�ussie, g�n�rer le token JWT
-        if (!$error && $this->getUser()) {
-            $token = $jwtManager->create($this->getUser());
-            // Retourner le token JWT dans la r�ponse
-            return $this->json(['token' => $token]);
+        // Vérifier si les données requises sont présentes dans la requête
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return new JsonResponse(['error' => 'Email et mot de passe requis'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Rendre le formulaire de connexion avec les erreurs �ventuelles
-        return $this->render('security/login.html.twig', [
-            'last_username' => $lastUsername,
-            'error' => $error,
-        ]);
+        // Récupérer le client depuis la base de données en fonction de l'email fourni
+        $client = $entityManager->getRepository(Client::class)->findOneBy(['email' => $data['email']]);
+
+        // Vérifier si le client existe et si le mot de passe est correct
+        if (!$client || !$passwordHasher->isPasswordValid($client, $data['password'])) {
+            return new JsonResponse(['error' => 'Identifiants invalides'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Si l'authentification est réussie, générer le token JWT
+        $token = $jwtManager->create($client);
+
+        // Retourner le token JWT dans la réponse
+        return new JsonResponse(['token' => $token]);
     }
 
     #[Route(path: '/logout', name: 'app_logout')]
