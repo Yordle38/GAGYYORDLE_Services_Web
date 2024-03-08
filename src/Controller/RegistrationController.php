@@ -51,6 +51,7 @@ class RegistrationController extends AbstractController
         else if ($request->isMethod('POST')) {
 
 
+
             $content = $request->getContent();
             $data = json_decode($content, true);
 
@@ -58,6 +59,20 @@ class RegistrationController extends AbstractController
             $email = $data['email'];
             $plainPassword = $data['mot_de_passe'];
 
+
+            $requiredKeys = ['email', 'mot_de_passe'];
+            foreach ($requiredKeys as $key) {
+                if (!isset($data[$key])) {
+                    return new JsonResponse(['error' => "La cle '$key' est manquante dans les donnees JSON"], JsonResponse::HTTP_BAD_REQUEST);
+                }
+            }
+            if (!is_string($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return new JsonResponse(['error' => "Ladresse email doit etre une chaine de caracteres valide"], JsonResponse::HTTP_BAD_REQUEST);
+            }
+        
+            if (!is_string($plainPassword)) {
+                return new JsonResponse(['error' => "Le mot de passe doit etre une chaine de caracteres"], JsonResponse::HTTP_BAD_REQUEST);
+            }
             $user->setEmail($email);
 
             $user->setPassword(
@@ -79,7 +94,7 @@ class RegistrationController extends AbstractController
 
 
             return new JsonResponse([
-                'message' => 'Inscription réussie',
+                'message' => 'Inscription reussie',
                 'user' => [
                     'id' => $user->getId(),
                     'email' => $user->getEmail(),
