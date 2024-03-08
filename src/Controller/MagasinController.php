@@ -69,7 +69,7 @@ class MagasinController extends AbstractController
     }
 
     // Ajoute un magasin
-    #[Route('/magasins/add', name: 'ajouter_magasin', methods: ['POST'])]
+    #[Route("/magasins/add", name: 'ajouter_magasin', methods: ['POST'])]
     public function ajouter(Request $request, EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager): Response
     {
         // Récupérer le token d'authentification depuis l'en-tête Authorization

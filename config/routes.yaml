@@ -8,3 +8,18 @@ app_login:
     path: /connexion
     controller: App\Controller\SecurityController::connexion
     methods: ['POST']
+
+ajouter_magasin:
+    path: /magasins/add
+    controller: App\Controller\MagasinController::ajouter
+    methods: ['POST']
+
+modifierQuantiteProduit:
+    path: '/produit/{idMagasin}/{idProduit}'
+    controller: App\Controller\ProduitController::modifierQuantiteProduit
+    methods: ['PUT']
+
+supprimerProduit:
+    path: '/produit/supprimer/{idMagasin}/{idProduit}'
+    controller: 'App\Controller\ProduitController::delete'
+    methods: ['DELETE']
