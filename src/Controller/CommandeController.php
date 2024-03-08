@@ -53,6 +53,13 @@ class CommandeController extends AbstractController
             // RECUPERE LES DONNEES DU POST
             $content = $request->getContent();
             $data = json_decode($content, true);
+            if (!array_key_exists('produits', $data)) {
+                return new JsonResponse(['error' => 'La commande doit cotnenir des produits'], Response::HTTP_BAD_REQUEST);
+            }
+            elseif(!array_key_exists('magasin_id', $data)) {
+                return new JsonResponse(['error' => 'La commande doit cotnenir un magasin_id'], Response::HTTP_BAD_REQUEST);
+            }
+
             $produits = $data['produits'];
             $idMagasin =  $data['magasin_id'];
 
@@ -76,14 +83,28 @@ class CommandeController extends AbstractController
             $commande->setUtilisateur($client);
 
             // AJOUTE LES PRODUITS A LA COMMANDE
-            foreach ($data['produits'] as $produitData) {
+            foreach ($produits as $produitData) {
+                if (!array_key_exists('produit_id', $produitData)) {
+                    return new JsonResponse(['error' => 'La cle produit_id est absente'], Response::HTTP_BAD_REQUEST);
+                }
+                if (!array_key_exists('quantite', $produitData)) {
+                    return new JsonResponse(['error' => 'La cle quantite est absente'], Response::HTTP_BAD_REQUEST);
+                }
                 $produitId = $produitData['produit_id'];
                 $quantite = $produitData['quantite'];
+
+                if (!is_int($produitId)) {
+                    return new JsonResponse(['error' => 'Lidentifiant du produit doit être un entier'], Response::HTTP_BAD_REQUEST);
+                }
+                elseif(!is_int($quantite)){
+                    return new JsonResponse(['error' => 'La quantite doit etre un entier'], Response::HTTP_BAD_REQUEST);
+                }
+
 
                 // recupere le produit
                 $produit = $entityManager->getRepository(Produit::class)->find($produitId);
 
-                // Vérifier si le produit existe
+                // Vérifie si le produit existe
                 if (!$produit) {
                     return new JsonResponse([
                         'message' => 'Produit pas trouvé avec l\'id '.$produitId,
@@ -114,7 +135,7 @@ class CommandeController extends AbstractController
                 'produits' => [],
             ];
             
-            // Boucle à travers les produits de la commande et ajoutez-les au tableau de réponse
+
             foreach ($commande->getCommandeProduits() as $commandeProduit) {
                 $produit = $commandeProduit->getProduit();
                 $responseData['produits'][] = [
@@ -128,7 +149,13 @@ class CommandeController extends AbstractController
 
 
         }
+        else {
+            return new JsonResponse(['error' => 'La requete doit etre en methode post'], Response::HTTP_BAD_REQUEST);
+        }
     }
+
+
+
     #[Route('/commandes/{idCommande}/choisir-creneau', name: 'choixCreneau')]
     public function choisirCreneau(Request $request, int $idCommande, EntityManagerInterface $entityManager): Response
     {
@@ -155,10 +182,15 @@ class CommandeController extends AbstractController
                 return new Response('Utilisateur non connecté', Response::HTTP_UNAUTHORIZED);
             }
 
+            $client = $entityManager->getRepository(Client::class)->findOneBy(['email' => $$jwtPayload->username]);
+            if(!$client){
+                return new JsonResponse(['error' => 'Ce client  n\'existe pas ou plus '], Response::HTTP_BAD_REQUEST);
+            }
+
             // recupere la commande
             $commande = $entityManager->getRepository(Commande::class)->find($idCommande);
             if(!$commande){
-                return new JsonResponse(['error' => 'Cette commande n\'existe pas'], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(['error' => 'Cette commande nexiste pas'], Response::HTTP_BAD_REQUEST);
             }
            
             if($commande->getCreneau()){
@@ -167,6 +199,11 @@ class CommandeController extends AbstractController
 
             $content = $request->getContent();
             $data = json_decode($content, true);
+            
+            if (!array_key_exists('produit_id', $data)) {
+                return new JsonResponse(['error' => 'La cle creneau_id est absente'], Response::HTTP_BAD_REQUEST);
+            }
+
             $idCreneau = $data['creneau_id'];
 
             $creneau = $entityManager->getRepository(Creneau::class)->find($idCreneau);
@@ -192,6 +229,9 @@ class CommandeController extends AbstractController
 
 
             return new JsonResponse($responseData);
+        }
+        else {
+            return new JsonResponse(['error' => 'La requete doit etre en methode post'], Response::HTTP_BAD_REQUEST);
         }
     }
 }
