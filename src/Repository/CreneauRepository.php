@@ -6,6 +6,8 @@ use App\Entity\Magasin;
 use App\Entity\Creneau;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Query\Expr;
+use Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @extends ServiceEntityRepository<Creneau>
@@ -24,8 +26,10 @@ class CreneauRepository extends ServiceEntityRepository
     public function findByMagasin(Magasin $magasin)
     {
         return $this->createQueryBuilder('c')
+            ->leftJoin('c.commande', 'cmd', Join::WITH, 'cmd IS NULL')
             ->andWhere('c.magasin = :magasin')
             ->setParameter('magasin', $magasin)
+            ->andWhere('cmd.id IS NULL')
             ->getQuery()
             ->getResult();
     }

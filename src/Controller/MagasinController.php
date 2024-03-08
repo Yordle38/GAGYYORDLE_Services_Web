@@ -185,35 +185,37 @@ class MagasinController extends AbstractController
         }
     }
 
-    // Récupérer tous les produits d'un magasin
+    // Récupére tous les produits d'un magasin
     #[Route('/magasins/{idMagasin}/creneaux-disponibles', name: 'recupererCreneaux', methods: ['GET'])]
     public function getCreneauxFromMagasin(int $idMagasin, EntityManagerInterface $entityManager, CreneauRepository $creneauRepository): JsonResponse
     {
-        try {
-            // Récupérer le magasin
-            $magasin = $entityManager->getRepository(Magasin::class)->find($idMagasin);
-            $creneaux = $creneauRepository->findByMagasin($magasin);
-            dd($creneaux);
-            
-            if (!$magasin) {
-                return new JsonResponse(['error' => 'Magasin non trouvé'], Response::HTTP_NOT_FOUND);
-            }
-
-            // Récupérer tous les produits du magasin
-            $produits = [];
-            foreach ($magasin->getStocks() as $stock) {
-                $produits[] = [
-                    'id' => $stock->getProduit()->getId(),
-                    'nom' => $stock->getProduit()->getNom(),
-                    'prix' => $stock->getProduit()->getPrix(),
-                    // Ajoutez d'autres propriétés de Produit si nécessaire
-                ];
-            }
-
-            return new JsonResponse($produits);
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Une erreur s\'est produite'], Response::HTTP_CONFLICT);
+        if (!is_int($idMagasin) || $idMagasin <= 0) {
+            return new JsonResponse(['error' => 'L\'identifiant du magasin doit être un entier positif'], Response::HTTP_BAD_REQUEST);
         }
+
+        // Récupére le magasin
+        $magasin = $entityManager->getRepository(Magasin::class)->find($idMagasin);
+
+
+        if (!$magasin) {
+            return new JsonResponse(['error' => 'Magasin non trouvé'], Response::HTTP_NOT_FOUND);
+        }
+
+        $creneaux = $creneauRepository->findByMagasin($magasin);
+        $creneauxFiltres = array_filter($creneaux, function($creneau) {
+            return $creneau->getCommande() === null;
+        });
+
+        
+        // Converti les objets Creneau en un tableau JSON
+        foreach ($creneauxFiltres as $creneau) {
+            $creneauxFormatted[] = [
+                'id' => $creneau->getId(),
+                'heure_debut' => date_format(date_create_from_format('H:i:s', $creneau->getHeureDebut()), 'H:i:s'),
+                'heure_fin' => date_format(date_create_from_format('H:i:s', $creneau->getHeureFin()), 'H:i:s'),
+            ];
+        }
+        return new JsonResponse($creneauxFormatted);
     }
 
 
